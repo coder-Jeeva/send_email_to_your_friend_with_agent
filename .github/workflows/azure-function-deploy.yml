@@ -1,0 +1,48 @@
+name: Deploy BirthdayAgent to Azure Function
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # Required for OIDC authentication
+      contents: read   # Required to checkout repo
+
+    steps:
+      # 1️⃣ Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2️⃣ Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # 3️⃣ Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+
+      # 4️⃣ Login to Azure using OIDC and UAMI
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.UAMI_CLIENT_ID }}         # Your User-Assigned Managed Identity client ID
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}       # Azure Tenant ID
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }} # Azure Subscription ID
+
+      # 5️⃣ Deploy Function App
+      - name: Deploy to Azure Function
+        uses: Azure/functions-action@v1
+        with:
+          app-name: 'agenttriger'       # Replace with your Function App name
+          slot-name: 'Production'
+          package: '.'

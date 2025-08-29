@@ -1,8 +1,8 @@
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 
 # Load .env only for local development
-load_dotenv()
+# load_dotenv()
 
 import azure.functions as func
 import smtplib

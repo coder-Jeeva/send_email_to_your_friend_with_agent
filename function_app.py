@@ -1,15 +1,11 @@
 import os
-# from dotenv import load_dotenv
-
-# Load .env only for local development
-# load_dotenv()
-
+import json
 import azure.functions as func
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# Load credentials
+# Load credentials from environment variables
 sender_email = os.getenv("SENDER_EMAIL")
 sender_password = os.getenv("GMAIL_PASSWORD")
 
@@ -26,7 +22,11 @@ def send_birthday(req: func.HttpRequest) -> func.HttpResponse:
         custom_message = data.get("message", f"Happy Birthday, {friend_name}! 🎉")
 
         if not friend_email:
-            return func.HttpResponse("Error: 'email' is required.", status_code=400)
+            return func.HttpResponse(
+                json.dumps({"status": "error", "message": "'email' is required"}),
+                status_code=400,
+                mimetype="application/json"
+            )
 
         # Create email
         message = MIMEMultipart()
@@ -40,7 +40,16 @@ def send_birthday(req: func.HttpRequest) -> func.HttpResponse:
             server.login(sender_email, sender_password)
             server.sendmail(sender_email, friend_email, message.as_string())
 
-        return func.HttpResponse(f"Birthday email sent to {friend_name}!", status_code=200)
+        # Return success as JSON
+        return func.HttpResponse(
+            json.dumps({"status": "success", "message": f"Birthday email sent to {friend_name}!"}),
+            status_code=200,
+            mimetype="application/json"
+        )
 
     except Exception as e:
-        return func.HttpResponse(f"Error: {e}", status_code=500)
+        return func.HttpResponse(
+            json.dumps({"status": "error", "message": str(e)}),
+            status_code=500,
+            mimetype="application/json"
+        )
